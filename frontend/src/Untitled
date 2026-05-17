@@ -1,6 +1,0 @@
-# Default: `npm run dev` proxies /api → http://127.0.0.1:3002 (no variable needed).
-# Override proxy target if Rails runs elsewhere:
-# VITE_PROXY_TARGET=http://127.0.0.1:3002
-
-# Optional: call the API directly from the browser (bypasses proxy; requires CORS).
-# VITE_API_URL=http://127.0.0.1:3002

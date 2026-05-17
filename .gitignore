@@ -11,6 +11,10 @@
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
+/tmp/cache/
+
+# Debug session logs (Cursor)
+debug-*.log
 !/log/.keep
 !/tmp/.keep
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_17_120004) do
+ActiveRecord::Schema[7.2].define(version: 2026_05_17_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -58,18 +58,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120004) do
     t.index ["job_application_id"], name: "index_ai_rejection_analyses_on_job_application_id"
   end
 
-  create_table "analysis_results", force: :cascade do |t|
-    t.bigint "job_application_id", null: false
-    t.integer "status", default: 0, null: false
-    t.text "summary"
-    t.jsonb "structured_feedback", default: {}, null: false
-    t.text "error_message"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["job_application_id"], name: "index_analysis_results_on_job_application_id", unique: true
-    t.index ["structured_feedback"], name: "index_analysis_results_on_structured_feedback", using: :gin
-  end
-
   create_table "job_applications", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "resume_id", null: false
@@ -79,8 +67,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120004) do
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.jsonb "semantic_job_doc_embedding"
-    t.string "semantic_job_doc_fingerprint"
     t.index ["resume_id"], name: "index_job_applications_on_resume_id"
     t.index ["user_id", "created_at"], name: "index_job_applications_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_job_applications_on_user_id"
@@ -126,8 +112,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120004) do
     t.text "parsed_text"
     t.string "parse_error", limit: 2000
     t.datetime "parsed_at"
-    t.jsonb "semantic_doc_embedding"
-    t.string "semantic_doc_fingerprint"
     t.index ["user_id"], name: "index_resumes_on_user_id"
   end
 
@@ -143,7 +127,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_17_120004) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_rejection_analyses", "job_applications"
-  add_foreign_key "analysis_results", "job_applications"
   add_foreign_key "job_applications", "resumes"
   add_foreign_key "job_applications", "users"
   add_foreign_key "resume_studio_rewrites", "job_applications", on_delete: :nullify

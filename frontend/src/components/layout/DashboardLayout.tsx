@@ -8,8 +8,7 @@ export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const studioRoute = useMatch({ path: '/app/studio', end: true })
   const jobReviewRoute = useMatch({ path: '/app/job', end: false })
-  const reviewListRoute = useMatch({ path: '/app/review', end: true })
-  const wideDashboard = Boolean(studioRoute || jobReviewRoute || reviewListRoute)
+  const wideDashboard = Boolean(studioRoute || jobReviewRoute)
 
   return (
     <div

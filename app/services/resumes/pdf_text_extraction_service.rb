@@ -30,8 +30,6 @@ module Resumes
           parsed_text: text,
           parse_error: nil,
           parsed_at: Time.current,
-          semantic_doc_embedding: nil,
-          semantic_doc_fingerprint: nil,
           updated_at: Time.current
         )
       end
@@ -47,8 +45,6 @@ module Resumes
         parsed_text: nil,
         parse_error: nil,
         parsed_at: nil,
-        semantic_doc_embedding: nil,
-        semantic_doc_fingerprint: nil,
         updated_at: Time.current
       )
     end
@@ -58,8 +54,6 @@ module Resumes
         parsed_text: nil,
         parse_error: message.to_s.truncate(2000),
         parsed_at: Time.current,
-        semantic_doc_embedding: nil,
-        semantic_doc_fingerprint: nil,
         updated_at: Time.current
       )
     end

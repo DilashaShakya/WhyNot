@@ -4,7 +4,6 @@ class JobApplication < ApplicationRecord
   belongs_to :user
   belongs_to :resume
 
-  has_one :analysis_result, dependent: :destroy
   has_many :ai_rejection_analyses, dependent: :destroy
 
   enum :status, {
@@ -19,8 +18,6 @@ class JobApplication < ApplicationRecord
   validates :job_title, length: { maximum: 255 }, allow_blank: true
   validates :company_name, length: { maximum: 255 }, allow_blank: true
   validate :resume_owned_by_user
-
-  # Optional JSON columns for legacy cached vectors (unused; lexicon-only matching now).
 
   private
 
