@@ -1,0 +1,25 @@
+# PostgreSQL. Versions 9.3 and up are supported.
+#
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
+  username: <%= ENV.fetch("DATABASE_USER", "postgres") %>
+  password: <%= ENV["DATABASE_PASSWORD"] %>
+  port: <%= ENV.fetch("DATABASE_PORT", "5432") %>
+
+development:
+  <<: *default
+  database: <%= ENV.fetch("DATABASE_NAME", "whynot_development") %>
+
+# Warning: the database defined as "test" will be erased and
+# re-generated when you run `rails db:test:prepare`.
+test:
+  <<: *default
+  database: whynot_test
+
+# In production, set DATABASE_URL or the individual DATABASE_* variables from `default`.
+production:
+  <<: *default
+  database: <%= ENV.fetch("DATABASE_NAME", "whynot_production") %>
