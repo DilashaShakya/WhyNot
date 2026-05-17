@@ -42,6 +42,7 @@ module Ai
       ]
       out = complete_json!(messages)
       normalize_writing_insights_response!(out)
+      out
     end
 
     def self.tailoring(resume:, resume_body:, job_application:)
@@ -81,7 +82,7 @@ module Ai
     end
 
     def self.complete_json!(messages)
-      raw = OpenaiHttpClient.chat_json(messages: messages, model: MODEL)
+      raw = ::OpenaiHttpClient.chat_json(messages: messages, model: MODEL)
       payload = raw["content"].to_s.strip
       obj =
         begin
@@ -107,7 +108,8 @@ module Ai
       if inner.is_a?(Array)
         h["match_items"] = inner if h["match_items"].blank? && h["requirements"].blank?
       elsif inner.is_a?(Hash)
-        h = inner.merge(h)
+        # Merge wrapper payload into the root object in-place (was leaking a re-assigned local before).
+        h.replace(inner.deep_stringify_keys.merge(h))
       end
 
       h["overview"] ||= h.delete("document_overview")

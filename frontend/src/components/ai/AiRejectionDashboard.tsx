@@ -48,16 +48,13 @@ export function AiRejectionDashboard({ jobApplicationId }: { jobApplicationId: n
       try {
         const d = await fetchAiRejectionAnalysis(jobApplicationId, id)
         setDetail(d)
-        if (d.status === 'completed' || d.status === 'failed') {
-          await loadList()
-        }
       } catch (e) {
         toastError(getApiErrors(e)[0] ?? 'Could not load AI run.')
       } finally {
         setDetailLoading(false)
       }
     },
-    [jobApplicationId, toastError, loadList],
+    [jobApplicationId, toastError],
   )
 
   useEffect(() => {
@@ -71,25 +68,18 @@ export function AiRejectionDashboard({ jobApplicationId }: { jobApplicationId: n
     return () => window.clearTimeout(t)
   }, [selectedId, loadDetail])
 
-  useEffect(() => {
-    if (!detail || !selectedId) return
-    if (detail.status !== 'pending' && detail.status !== 'processing') return
-
-    const iv = window.setInterval(() => {
-      void loadDetail(selectedId)
-    }, 2500)
-
-    return () => window.clearInterval(iv)
-  }, [detail, selectedId, loadDetail])
-
   async function onGenerate() {
     setGenerating(true)
     try {
       const row = await createAiRejectionAnalysis(jobApplicationId)
-      toastSuccess('Resume strategist run started—results appear below when ready.')
       setSelectedId(row.id)
       setDetail(row)
       await loadList()
+      if (row.status === 'failed') {
+        toastError(row.error_message ?? 'AI feedback could not be generated. Try again.')
+        return
+      }
+      toastSuccess('AI feedback generated.')
     } catch (e) {
       getApiErrors(e).forEach((m) => toastError(m))
     } finally {
@@ -107,21 +97,21 @@ export function AiRejectionDashboard({ jobApplicationId }: { jobApplicationId: n
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-xl space-y-1">
           <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-            AI resume strategist
+            AI recruiter feedback
           </h2>
           <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-            Bullet-level rewrites, recruiter-style observations, contextual skill gaps, positioning, and a prioritized
-            checklist—grounded in your resume text, posting, and matcher. Each run is saved so you can compare iterations.
+            Honest recruiter-style feedback: strengths, rejection risks, missing keywords, bullet rewrites, and a
+            prioritized action checklist. Each run is saved so you can compare iterations.
           </p>
         </div>
         <Button type="button" onClick={() => void onGenerate()} disabled={generating}>
           {generating ? (
             <>
               <Spinner className="h-4 w-4" />
-              Starting…
+              Generating…
             </>
           ) : (
-            'Generate strategist analysis'
+            'Generate feedback'
           )}
         </Button>
       </div>
@@ -164,7 +154,6 @@ export function AiRejectionDashboard({ jobApplicationId }: { jobApplicationId: n
                     <span className="block">{label}</span>
                     <span className="mt-0.5 block text-[11px] capitalize text-neutral-400 dark:text-neutral-500">
                       {row.status.replaceAll('_', ' ')}
-                      {typeof row.overall_confidence === 'number' ? ` · ${row.overall_confidence}% conf.` : ''}
                     </span>
                   </button>
                 )

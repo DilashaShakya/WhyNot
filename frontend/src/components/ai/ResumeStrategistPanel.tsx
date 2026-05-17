@@ -1,26 +1,14 @@
 import type { ReactNode } from 'react'
 import type {
-  AiRejectionAnalysisDetail,
   AiRejectionStructuredFeedback,
   BulletRewriteItem,
   ContextualMissingSkill,
   ImpactMetricsGap,
   PrioritizedImprovement,
 } from '@/api/aiRejection.api'
-import { ConfidenceMeter } from '@/components/ai/ConfidenceMeter'
 import { FeedbackDisclosure } from '@/components/ai/FeedbackDisclosure'
 import { Card } from '@/components/ui/Card'
 import { motion } from 'framer-motion'
-
-const CONF_LABELS: { key: string; title: string }[] = [
-  { key: 'recruiter_observations', title: 'Recruiter observations' },
-  { key: 'bullet_rewrites', title: 'Bullet depth' },
-  { key: 'contextual_missing_skills', title: 'Skill context' },
-  { key: 'positioning_recommendations', title: 'Positioning' },
-  { key: 'impact_metrics_gaps', title: 'Impact & metrics' },
-  { key: 'resume_strengths', title: 'Strength recognition' },
-  { key: 'prioritized_improvements', title: 'Action plan' },
-]
 
 const PRIORITY_DOT: Record<PrioritizedImprovement['priority'], string> = {
   high: 'bg-neutral-900 dark:bg-neutral-100',
@@ -43,7 +31,7 @@ function Checklist({ items }: { items: PrioritizedImprovement[] }) {
           className="flex gap-3 border-b border-neutral-100 pb-4 last:border-0 dark:border-neutral-800/80"
         >
           <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[it.priority] ?? PRIORITY_DOT.medium}`} />
-          <div className="min-w-0 flex-1">
+          <motion.div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{it.title}</span>
               <span className="text-[10px] font-medium uppercase tracking-wide text-neutral-400">
@@ -51,7 +39,7 @@ function Checklist({ items }: { items: PrioritizedImprovement[] }) {
               </span>
             </div>
             <p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">{it.detail}</p>
-          </div>
+          </motion.div>
         </motion.li>
       ))}
     </ol>
@@ -159,12 +147,13 @@ const LEGACY_STRENGTH_DEFS: LegacySectionDef[] = [
 
 const LEGACY_WEAKNESS_DEFS: LegacySectionDef[] = [
   { key: 'possible_rejection_factors', title: 'Screening risks', subtitle: 'What a busy recruiter might flag.' },
-  { key: 'missing_skills', title: 'Lexicon gaps', subtitle: 'From matcher + narrative.' },
+  { key: 'missing_skills', title: 'Skill gaps', subtitle: 'Technologies or areas the role expects but the resume lacks.' },
   { key: 'resume_weaknesses', title: 'Clarity & depth' },
-  { key: 'keyword_deficiencies', title: 'Language vs posting' },
+  { key: 'keyword_deficiencies', title: 'Missing keywords', subtitle: 'Posting language vs. how the resume reads today.' },
+  { key: 'company_culture_notes', title: 'Company culture fit', subtitle: 'How well the resume language matches the culture signals in this posting.' },
   { key: 'experience_mismatch_notes', title: 'Scope & seniority' },
-  { key: 'project_alignment_notes', title: 'Project fit' },
-  { key: 'formatting_readability_notes', title: 'Structure' },
+  { key: 'project_alignment_notes', title: 'Project alignment' },
+  { key: 'formatting_readability_notes', title: 'Structure & readability' },
 ]
 
 const LEGACY_IMPROVEMENT_DEFS: LegacySectionDef[] = [
@@ -228,9 +217,7 @@ function BulletList({ items }: { items: string[] }) {
   )
 }
 
-export function ResumeStrategistPanel({ detail, fb }: { detail: AiRejectionAnalysisDetail; fb: AiRejectionStructuredFeedback }) {
-  const conf = detail.confidence_by_section || {}
-
+export function ResumeStrategistPanel({ fb }: { fb: AiRejectionStructuredFeedback }) {
   const strengthsResume = fb.resume_strengths?.length
   const weaknessesRecruiter = fb.recruiter_observations?.length
   const weaknessesContext = fb.contextual_missing_skills?.length
@@ -348,25 +335,6 @@ export function ResumeStrategistPanel({ detail, fb }: { detail: AiRejectionAnaly
           <EmptySectionHint text="No improvement items in this response—try running the strategist again with fuller resume and job text." />
         ) : null}
       </StrategistSection>
-
-      <details className="rounded-lg border border-neutral-200 bg-neutral-50/50 open:bg-white dark:border-neutral-800 dark:bg-neutral-900/30 dark:open:bg-neutral-950">
-        <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-neutral-900 marker:content-none dark:text-neutral-50 [&::-webkit-details-marker]:hidden">
-          Model confidence <span className="font-normal text-neutral-500 dark:text-neutral-400">(optional)</span>
-        </summary>
-        <div className="border-t border-neutral-200 px-5 pb-5 dark:border-neutral-800">
-          <p className="pt-4 text-xs text-neutral-500">Per-section fit of this advice to your materials (not a hire prediction).</p>
-          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="w-full max-w-xs sm:shrink-0 sm:ml-auto">
-              <ConfidenceMeter label="Overall" value={detail.overall_confidence} />
-            </div>
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {CONF_LABELS.map(({ key, title }) => (
-              <ConfidenceMeter key={key} label={title} value={conf[key]} />
-            ))}
-          </div>
-        </div>
-      </details>
     </div>
   )
 }

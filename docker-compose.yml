@@ -1,3 +1,4 @@
+# Core stack: Postgres + Rails API. No optional Python ML or extra API services—faster startup.
 services:
   db:
     image: postgres:16-alpine
@@ -22,6 +23,8 @@ services:
       - .:/rails
     ports:
       - "3002:3002"
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -42,6 +45,7 @@ services:
         apt-get update -qq &&
         apt-get install -y --no-install-recommends libpq-dev build-essential &&
         bundle install &&
+        rm -rf tmp/cache/bootsnap &&
         bin/rails db:prepare &&
         rm -f tmp/pids/server.pid &&
         bin/rails server -b 0.0.0.0 -p 3002

@@ -61,6 +61,8 @@ module Api
         rescue Ai::OpenaiHttpClient::ApiError => e
           Rails.logger.warn("[ResumeStudio] OpenAI: #{e.message}")
           render json: { errors: [ { code: "ai_error", message: e.message.truncate(400) } ] }, status: :bad_gateway
+        rescue StandardError => e
+          render_studio_server_error(e)
         end
 
         def writing_insights
@@ -81,6 +83,8 @@ module Api
         rescue Ai::OpenaiHttpClient::ApiError => e
           Rails.logger.warn("[ResumeStudio] OpenAI: #{e.message}")
           render json: { errors: [ { code: "ai_error", message: e.message.truncate(400) } ] }, status: :bad_gateway
+        rescue StandardError => e
+          render_studio_server_error(e)
         end
 
         def tailoring
@@ -101,6 +105,8 @@ module Api
         rescue Ai::OpenaiHttpClient::ApiError => e
           Rails.logger.warn("[ResumeStudio] OpenAI: #{e.message}")
           render json: { errors: [ { code: "ai_error", message: e.message.truncate(400) } ] }, status: :bad_gateway
+        rescue StandardError => e
+          render_studio_server_error(e)
         end
 
         def impact_scan
@@ -124,9 +130,20 @@ module Api
         rescue Ai::OpenaiHttpClient::ApiError => e
           Rails.logger.warn("[ResumeStudio] OpenAI: #{e.message}")
           render json: { errors: [ { code: "ai_error", message: e.message.truncate(400) } ] }, status: :bad_gateway
+        rescue StandardError => e
+          render_studio_server_error(e)
         end
 
         private
+
+        def render_studio_server_error(error)
+          Rails.logger.error(
+            "[ResumeStudio] #{action_name}: #{error.class}: #{error.message}\n#{error.backtrace&.first(8)&.join("\n")}"
+          )
+          render json: {
+            errors: [ { code: "server_error", message: error.message.to_s.truncate(400) } ]
+          }, status: :internal_server_error
+        end
 
         def set_resume
           @resume = current_user.resumes.find(params[:resume_id])
@@ -191,6 +208,8 @@ module Api
             input: json_safe_deep(input_hash || {}),
             output: safe_out
           )
+        rescue ActiveRecord::RecordInvalid => e
+          Rails.logger.error("[ResumeStudio] persist_rewrite #{kind}: #{e.record.errors.full_messages.join(', ')}")
         end
 
         def public_result(out)

@@ -1,6 +1,4 @@
 ENV["RAILS_ENV"] ||= "test"
-# Semantic embeddings require Python + sentence-transformers; keep deterministic tests lexical-only.
-ENV["WHYNOT_DISABLE_SEMANTIC_EMBEDDINGS"] = "1" unless ENV.key?("WHYNOT_DISABLE_SEMANTIC_EMBEDDINGS")
 require_relative "../config/environment"
 require "rails/test_help"
 

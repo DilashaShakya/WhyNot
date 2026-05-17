@@ -10,6 +10,7 @@ import { JobDescriptionPage } from '@/pages/dashboard/JobDescriptionPage'
 import { ResumeDetailPage } from '@/pages/dashboard/ResumeDetailPage'
 import { ResumeOptimizationStudioPage } from '@/pages/dashboard/ResumeOptimizationStudioPage'
 import { ResumePage } from '@/pages/dashboard/ResumePage'
+import { ResumeReviewPage } from '@/pages/dashboard/ResumeReviewPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
@@ -28,11 +29,12 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<DashboardLayout />}>
           <Route index element={<DashboardHomePage />} />
-          <Route path="studio" element={<ResumeOptimizationStudioPage />} />
           <Route path="resume" element={<ResumePage />} />
           <Route path="resume/:resumeId" element={<ResumeDetailPage />} />
-          <Route path="job/:jobApplicationId" element={<JobComparisonPage />} />
           <Route path="job" element={<JobDescriptionPage />} />
+          <Route path="job/:jobApplicationId" element={<JobComparisonPage />} />
+          <Route path="review" element={<ResumeReviewPage />} />
+          <Route path="studio" element={<ResumeOptimizationStudioPage />} />
           <Route path="analysis" element={<AnalysisPage />} />
         </Route>
       </Route>

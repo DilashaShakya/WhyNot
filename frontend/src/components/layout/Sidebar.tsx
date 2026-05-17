@@ -4,10 +4,9 @@ import { cn } from '@/lib/cn'
 
 const items = [
   { to: '/app', label: 'Overview', end: true },
-  { to: '/app/studio', label: 'Optimization studio', end: true },
-  { to: '/app/resume', label: 'Resume' },
-  { to: '/app/job', label: 'Job description' },
-  { to: '/app/analysis', label: 'Analysis' },
+  { to: '/app/resume', label: 'My resume', end: true },
+  { to: '/app/job', label: 'Job review', end: false },
+  { to: '/app/studio', label: 'Studio', end: true },
 ]
 
 export function Sidebar({

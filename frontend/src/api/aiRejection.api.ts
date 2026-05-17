@@ -54,6 +54,7 @@ export type AiRejectionStructuredFeedback = {
   experience_mismatch_notes?: string[]
   project_alignment_notes?: string[]
   formatting_readability_notes?: string[]
+  company_culture_notes?: string[]
   recruiter_observations?: string[]
   bullet_rewrites?: BulletRewriteItem[]
   contextual_missing_skills?: ContextualMissingSkill[]

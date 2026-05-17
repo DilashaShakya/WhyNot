@@ -1,36 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { fetchJobApplication, refreshJobAnalysis } from '@/api/jobApplications.api'
+import { deleteJobApplication, fetchJobApplication, updateJobApplication } from '@/api/jobApplications.api'
 import { getApiErrors } from '@/api/errors'
 import type { JobApplicationDetail } from '@/api/types'
-import { StructuredComparisonPanel } from '@/components/analysis/StructuredComparisonPanel'
-import { isStructuredComparison } from '@/components/analysis/structuredComparison'
 import { AiRejectionDashboard } from '@/components/ai/AiRejectionDashboard'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Spinner } from '@/components/ui/Spinner'
 import { useToast } from '@/hooks/useToast'
-import { parseSemanticLayer } from '@/lib/analytics/semanticLayer'
-
-function extractSemanticLayer(raw: unknown) {
-  if (!raw || typeof raw !== 'object') return null
-  const layer = (raw as Record<string, unknown>).semantic_layer
-  return parseSemanticLayer(layer)
-}
-
-function ComparisonSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="h-8 w-48 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
-      <div className="h-28 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800" />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="h-40 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800" />
-        <div className="h-40 animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800" />
-      </div>
-    </div>
-  )
-}
+import { confirmDelete } from '@/stores/confirmStore'
 
 export function JobComparisonPage() {
   const { jobApplicationId } = useParams<{ jobApplicationId: string }>()
@@ -40,10 +19,14 @@ export function JobComparisonPage() {
   const [detail, setDetail] = useState<JobApplicationDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [editingJd, setEditingJd] = useState(false)
+  const [jdDraft, setJdDraft] = useState('')
+  const [savingJd, setSavingJd] = useState(false)
+
   const load = useCallback(async () => {
     if (!Number.isFinite(id) || id <= 0) {
-      setError('Invalid comparison.')
+      setError('Invalid review.')
       setLoading(false)
       return
     }
@@ -52,94 +35,111 @@ export function JobComparisonPage() {
     try {
       const d = await fetchJobApplication(id)
       setDetail(d)
+      setJdDraft(d.job_description)
     } catch (e) {
-      setError(getApiErrors(e)[0] ?? 'Could not load comparison.')
+      setError(getApiErrors(e)[0] ?? 'Could not load review.')
     } finally {
       setLoading(false)
     }
   }, [id])
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      void load()
-    }, 0)
+    const t = window.setTimeout(() => void load(), 0)
     return () => window.clearTimeout(t)
   }, [load])
 
-  async function onRefresh() {
-    if (!Number.isFinite(id) || id <= 0) return
-    setRefreshing(true)
+  async function onDelete() {
+    const label =
+      [detail?.job_title, detail?.company_name].filter(Boolean).join(' · ') || 'Untitled role'
+    if (!(await confirmDelete(label, 'job review'))) return
+    setDeleting(true)
     try {
-      await refreshJobAnalysis(id)
-      toastSuccess('Analysis refreshed.')
-      await load()
+      await deleteJobApplication(id)
+      toastSuccess('Deleted.')
+      navigate('/app/job')
     } catch (e) {
       getApiErrors(e).forEach((m) => toastError(m))
     } finally {
-      setRefreshing(false)
+      setDeleting(false)
+    }
+  }
+
+  async function onSaveJd() {
+    if (!detail) return
+    setSavingJd(true)
+    try {
+      const updated = await updateJobApplication(id, { job_description: jdDraft })
+      setDetail(updated)
+      setEditingJd(false)
+      toastSuccess('Job description updated.')
+    } catch (e) {
+      getApiErrors(e).forEach((m) => toastError(m))
+    } finally {
+      setSavingJd(false)
     }
   }
 
   if (!Number.isFinite(id) || id <= 0) {
     return (
       <div className="text-sm text-neutral-600 dark:text-neutral-400">
-        Invalid job application.{' '}
+        Invalid job review.{' '}
         <Link to="/app/job" className="underline underline-offset-2">
-          Back to comparisons
+          Back
         </Link>
       </div>
     )
   }
 
-  const structuredFeedback = detail?.analysis_result?.structured_feedback
-  const structuredPayload = isStructuredComparison(structuredFeedback) ? structuredFeedback : null
-  const semanticLayer = extractSemanticLayer(structuredFeedback)
-  const failed = detail?.analysis_result?.status === 'failed'
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <Link
             to="/app/job"
             className="text-xs font-medium text-neutral-500 underline-offset-2 hover:underline dark:text-neutral-400"
           >
-            ← All comparisons
+            ← All reviews
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-            {detail?.job_title?.trim() || 'Untitled role'}{' '}
-            {detail?.company_name?.trim() ? (
-              <span className="text-neutral-500 dark:text-neutral-400">· {detail.company_name}</span>
-            ) : null}
-          </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-            Start with <strong>AI resume strategist</strong> feedback for bullet rewrites and a prioritized checklist.
-            Structured matching below explains lexicon and keyword gaps.
-          </p>
+          {loading ? (
+            <div className="flex items-center gap-2 pt-1">
+              <Spinner className="h-4 w-4" />
+              <span className="text-sm text-neutral-500">Loading…</span>
+            </div>
+          ) : (
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+              {detail?.job_title?.trim() || 'Untitled role'}
+              {detail?.company_name?.trim() ? (
+                <span className="text-neutral-500 dark:text-neutral-400"> · {detail.company_name}</span>
+              ) : null}
+            </h1>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" onClick={() => void load()} disabled={loading || refreshing}>
-            Reload
-          </Button>
-          <Button type="button" onClick={() => void onRefresh()} disabled={loading || refreshing}>
-            {refreshing ? (
-              <>
-                <Spinner className="h-4 w-4" />
-                Refreshing
-              </>
-            ) : (
-              'Refresh analysis'
-            )}
-          </Button>
-        </div>
+        {detail && !loading ? (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/app/studio"
+              className="rounded-md border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
+            >
+              Open studio
+            </Link>
+            <button
+              type="button"
+              onClick={() => void onDelete()}
+              disabled={deleting}
+              className="rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </button>
+          </div>
+        ) : null}
       </div>
 
-      {loading ? <ComparisonSkeleton /> : null}
       {error ? (
         <Card className="border-red-200 bg-red-50/50 p-4 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100">
           {error}
@@ -151,61 +151,54 @@ export function JobComparisonPage() {
         </Card>
       ) : null}
 
-      {!loading && detail ? (
-        <>
-          {detail.analysis_result?.summary ? (
-            <Card className="border-neutral-200 p-5 dark:border-neutral-800">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
-                Summary
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-neutral-800 dark:text-neutral-100">
-                {detail.analysis_result.summary}
-              </p>
-            </Card>
-          ) : null}
-
-          {failed ? (
-            <Card className="border-neutral-200 p-5 dark:border-neutral-800">
-              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Comparison could not complete</p>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                {detail.analysis_result?.error_message ??
-                  'Ensure your resume finished PDF parsing, then refresh this analysis.'}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  to={`/app/resume/${detail.resume_id}`}
-                  className="inline-flex items-center rounded-md border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-50 dark:hover:bg-neutral-900"
-                >
-                  Open resume
-                </Link>
-                <Button type="button" onClick={() => void onRefresh()} disabled={refreshing}>
-                  Try again
-                </Button>
+      {/* Job description (collapsible) */}
+      {detail && !loading ? (
+        <details className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+          <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-neutral-900 marker:content-none dark:text-neutral-50 [&::-webkit-details-marker]:hidden">
+            Job description
+            <span className="ml-2 text-xs font-normal text-neutral-400 dark:text-neutral-500">
+              (click to expand)
+            </span>
+          </summary>
+          <div className="border-t border-neutral-100 p-5 dark:border-neutral-800">
+            {editingJd ? (
+              <div className="space-y-3">
+                <textarea
+                  value={jdDraft}
+                  onChange={(e) => setJdDraft(e.target.value)}
+                  rows={12}
+                  className="w-full resize-y rounded-md border border-neutral-200 bg-neutral-50/50 px-3 py-2 font-mono text-xs leading-relaxed focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-100"
+                />
+                <div className="flex gap-2">
+                  <Button type="button" onClick={() => void onSaveJd()} disabled={savingJd}>
+                    {savingJd ? 'Saving…' : 'Save'}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => { setEditingJd(false); setJdDraft(detail.job_description) }}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
-            </Card>
-          ) : null}
+            ) : (
+              <div className="space-y-3">
+                <p className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
+                  {detail.job_description}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setEditingJd(true)}
+                  className="text-xs font-medium text-neutral-500 underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100"
+                >
+                  Edit description
+                </button>
+              </div>
+            )}
+          </div>
+        </details>
+      ) : null}
 
-          {structuredPayload && detail && !failed ? (
-            <>
-              <AiRejectionDashboard jobApplicationId={id} />
-              <StructuredComparisonPanel
-                matching={structuredPayload.matching_skills}
-                missing={structuredPayload.missing_skills}
-                extras={structuredPayload.extra_resume_skills ?? []}
-                overlap={structuredPayload.keyword_overlap}
-                alignment={structuredPayload.experience_alignment}
-                semanticLayer={semanticLayer}
-              />
-            </>
-          ) : null}
-
-          {!failed && !structuredPayload ? (
-            <Card className="p-5 text-sm text-neutral-600 dark:text-neutral-400">
-              No structured comparison payload yet. Use <strong>Refresh analysis</strong> after saving this job
-              application.
-            </Card>
-          ) : null}
-        </>
+      {/* AI feedback — primary content */}
+      {!loading && detail ? (
+        <AiRejectionDashboard jobApplicationId={id} />
       ) : null}
     </motion.div>
   )

@@ -1,18 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { fetchResume } from '@/api/resumes.api'
+import { deleteResume, fetchResume } from '@/api/resumes.api'
 import { getApiErrors } from '@/api/errors'
 import type { ResumeDetail } from '@/api/types'
 import { ParsedResumePreview } from '@/components/resume/ParsedResumePreview'
 import { ResumeListSkeleton } from '@/components/resume/ResumeListSkeleton'
 import { Card } from '@/components/ui/Card'
+import { useToast } from '@/hooks/useToast'
+import { confirmDelete } from '@/stores/confirmStore'
 
 export function ResumeDetailPage() {
   const { resumeId } = useParams<{ resumeId: string }>()
   const id = Number(resumeId)
+  const navigate = useNavigate()
+  const { error: toastError, success: toastSuccess } = useToast()
   const [resume, setResume] = useState<ResumeDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const load = useCallback(async () => {
     if (!Number.isFinite(id)) {
@@ -34,6 +39,22 @@ export function ResumeDetailPage() {
     }, 0)
     return () => window.clearTimeout(t)
   }, [load])
+
+  async function onDelete() {
+    if (!resume) return
+    const label = resume.title.trim() || 'Untitled resume'
+    if (!(await confirmDelete(label, 'resume'))) return
+    setDeleting(true)
+    try {
+      await deleteResume(resume.id)
+      toastSuccess('Resume deleted.')
+      navigate('/app/resume')
+    } catch (e) {
+      getApiErrors(e).forEach((m) => toastError(m))
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   if (!Number.isFinite(id)) {
     return (
@@ -73,27 +94,37 @@ export function ResumeDetailPage() {
       transition={{ duration: 0.35 }}
       className="space-y-8"
     >
-      <div>
-        <Link
-          to="/app/resume"
-          className="text-xs font-medium text-neutral-500 underline-offset-4 hover:underline dark:text-neutral-400"
-        >
-          ← Resumes
-        </Link>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-          {resume.title}
-        </h1>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
-          {resume.file ? (
-            <>
-              <span>{resume.file.filename}</span>
-              <span>{(resume.file.byte_size / 1024).toFixed(0)} KB</span>
-            </>
-          ) : (
-            <span>No file</span>
-          )}
-          {resume.parsed_at ? <span>Parsed {new Date(resume.parsed_at).toLocaleString()}</span> : null}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <Link
+            to="/app/resume"
+            className="text-xs font-medium text-neutral-500 underline-offset-4 hover:underline dark:text-neutral-400"
+          >
+            ← Resumes
+          </Link>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+            {resume.title}
+          </h1>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+            {resume.file ? (
+              <>
+                <span>{resume.file.filename}</span>
+                <span>{(resume.file.byte_size / 1024).toFixed(0)} KB</span>
+              </>
+            ) : (
+              <span>No file</span>
+            )}
+            {resume.parsed_at ? <span>Parsed {new Date(resume.parsed_at).toLocaleString()}</span> : null}
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => void onDelete()}
+          disabled={deleting}
+          className="shrink-0 rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
+        >
+          {deleting ? 'Deleting…' : 'Delete resume'}
+        </button>
       </div>
 
       {resume.parse_error ? (

@@ -53,7 +53,11 @@ module Ai
 
     def resume_writing_insights_user(resume_title:, resume_body:, job_context:)
       <<~PROMPT.strip
-        Task: Score how well the FULL resume addresses important expectations. If a job description is provided, each row should reflect a concrete theme, skill, or requirement from that posting (paraphrased). If no job is provided, each row should reflect a strong resume-quality dimension (impact, clarity, technical depth, leadership, scope, ATS keywords, etc.) inferred from the resume itself.
+        Task: Score how well the FULL resume addresses important expectations. If a job description is provided, derive checklist items from:
+        1. Concrete technical skills, tools, and requirements stated in the posting.
+        2. Experience level and scope signals (seniority, ownership, scale).
+        3. Company culture, values, and working-style signals visible in the posting (e.g. "fast-paced", "ownership mindset", "collaborative", "data-driven", "startup", "enterprise", "customer obsessed"). Score how well the candidate's language, examples, and framing reflect those culture signals.
+        If no job is provided, derive 12-16 items from the resume and from general senior-hire expectations.
 
         Resume document title: #{resume_title}
 
@@ -111,7 +115,8 @@ module Ai
         - "projects_to_raise" (array of objects with "project_hint" string, "reason" string — refer to lines/projects actually in resume text)
         - "technologies_to_surface" (array of objects with "technology" string, "where" string suggesting placement)
         - "strongest_experience_alignment" (array of strings tying resume bullets/experience to job themes, without invention)
-        - "executive_summary_angle" (string, 2-5 sentences: how to position the candidate honestly for this posting)
+        - "culture_fit_signals" (array of objects with "culture_value" string (the company culture trait from the posting) and "how_to_reflect" string (concrete language tweak or framing the candidate can use to show alignment—grounded in their actual experience, no invention))
+        - "executive_summary_angle" (string, 2-5 sentences: how to position the candidate honestly for this posting, including cultural fit angle if visible in the job description)
       PROMPT
     end
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { createResume, fetchResumes } from '@/api/resumes.api'
+import { createResume, deleteResume, fetchResumes } from '@/api/resumes.api'
 import { getApiErrors } from '@/api/errors'
 import type { ResumeListItem } from '@/api/types'
 import { ResumeDropzone, UploadProgressBar } from '@/components/resume/ResumeDropzone'
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/Label'
 import { Spinner } from '@/components/ui/Spinner'
 import { useToast } from '@/hooks/useToast'
 import { validatePdfFile } from '@/lib/resumePdf'
+import { confirmDelete } from '@/stores/confirmStore'
 
 export function ResumePage() {
   const navigate = useNavigate()
@@ -25,6 +26,7 @@ export function ResumePage() {
   const [fileError, setFileError] = useState<string | null>(null)
   const [uploadPct, setUploadPct] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setLoadError(null)
@@ -58,6 +60,23 @@ export function ResumePage() {
     if (file?.name) return file.name.replace(/\.pdf$/i, '') || 'Resume'
     return ''
   }, [title, file])
+
+  async function onDeleteResume(resume: ResumeListItem, e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const label = resume.title.trim() || 'Untitled resume'
+    if (!(await confirmDelete(label, 'resume'))) return
+    setDeletingId(resume.id)
+    try {
+      await deleteResume(resume.id)
+      toastSuccess('Resume deleted.')
+      await load()
+    } catch (err) {
+      getApiErrors(err).forEach((m) => toastError(m))
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -151,8 +170,9 @@ export function ResumePage() {
           <ul className="mt-4 space-y-3">
             {resumes.map((r) => (
               <li key={r.id}>
-                <Link to={`/app/resume/${r.id}`}>
-                  <Card className="p-4 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-900/80">
+                <Card className="p-4 transition-colors hover:border-neutral-300 dark:hover:border-neutral-600">
+                  <div className="flex items-start gap-3">
+                    <Link to={`/app/resume/${r.id}`} className="min-w-0 flex-1">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{r.title}</p>
@@ -172,8 +192,17 @@ export function ResumePage() {
                         {r.parsed_preview}
                       </p>
                     ) : null}
-                  </Card>
-                </Link>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={(e) => void onDeleteResume(r, e)}
+                      disabled={deletingId === r.id}
+                      className="shrink-0 rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30"
+                    >
+                      {deletingId === r.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </div>
+                </Card>
               </li>
             ))}
           </ul>

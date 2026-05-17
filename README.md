@@ -1,66 +1,116 @@
-# WhyNot
+# WhyNot — AI-Powered Resume Intelligence Platform
 
-Targeted **resume improvement for a specific role**: deterministic skills/keywords, optional embeddings, and an **AI resume strategist** (bullet rewrites, recruiter observations, contextual gaps, positioning). React UI in `frontend/`.
+WhyNot is an AI-powered career feedback and resume optimization platform designed to help users understand why a resume may not align with a specific role — and how to improve it.
 
-## Stack
+Instead of providing generic ATS scores or surface-level analytics, WhyNot delivers recruiter-style feedback grounded in the actual resume and job description. Users can upload resumes, compare them against job postings, receive actionable insights, and improve resume content through an integrated optimization workspace.
 
-Rails 7.2 API, PostgreSQL, JWT auth, PDF parsing, optional OpenAI for the strategist workflow (`prompt_version: strategist_v1`), optional Python + [sentence-transformers](https://www.sbert.net/) for embeddings (see `ml/python/`).
+The platform focuses on practical career intelligence:
 
-## AI resume strategist
+* identifying missing technologies and weak positioning
+* surfacing strengths and transferable experience
+* improving technical phrasing and resume language
+* generating stronger, recruiter-oriented bullet points
+* helping users tailor resumes toward specific engineering roles
 
-After a job application has a **completed** structured comparison, call **`POST /api/v1/job_applications/:id/ai_rejection_analyses`** (same endpoint as before). The job enqueues **`AiRejectionAnalysisJob`**, which uses **`Ai::RejectionAnalysisPrompt`** (version **`strategist_v1`**) and normalizes output via **`Ai::RejectionFeedbackParser`**.
+## Core Features
 
-**Stored in `ai_rejection_analyses.structured_feedback` (JSON):**
+* PDF resume upload and parsing
+* Job description comparison workflows
+* AI-generated recruiter-style rejection insights
+* Resume strengths and weakness analysis
+* Missing keyword and skill detection
+* Resume Optimization Studio with editable rewrite suggestions
+* Before/after bullet point improvements
+* Downloadable optimized resume workflows
+* Persistent analysis history and saved resume iterations
 
-| Area | Keys (examples) |
+## Tech Stack
+
+### Frontend
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* Framer Motion
+
+### Backend
+
+* Ruby on Rails API
+* PostgreSQL
+
+### AI Integration
+
+* OpenAI API
+
+### Infrastructure
+
+* Docker
+* JWT Authentication
+
+## Design Philosophy
+
+WhyNot was intentionally designed with a minimal, distraction-free interface inspired by modern productivity tools like Notion and Linear.
+
+The focus is not on overwhelming users with analytics dashboards, but on delivering:
+
+* clear actionable insights
+* calm UX
+* meaningful resume improvements
+* recruiter-oriented feedback
+
+## Why This Project Exists
+
+Many resume tools stop at keyword scoring or generic AI responses.
+
+WhyNot was built to approach resume feedback more like an experienced recruiter or engineering hiring manager:
+
+* identifying positioning issues
+* recognizing missing technical emphasis
+* suggesting stronger technical communication
+* helping candidates better represent their actual experience
+
+The goal is not to exaggerate resumes, but to help users communicate their skills more effectively and align resumes more intentionally with specific roles.
+
+## Quick Start
+
+1. Copy env and add your OpenAI key (required for AI features):
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Set `OPENAI_API_KEY` in `.env`.
+
+2. Start the API and database:
+
+   ```bash
+   docker compose up
+   ```
+
+   API: http://localhost:3002 (health: http://localhost:3002/up)
+
+3. Start the UI (new terminal):
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+   App: http://localhost:5173
+
+Sign up in the app, upload a PDF resume, create a job review, then use **Generate feedback** on the review page.
+
+## Environment
+
+| Variable | Purpose |
 | --- | --- |
-| Narrative | `executive_summary`, `prompt_schema_version` |
-| Actions | `prioritized_improvements[]` (`priority`, `title`, `detail`, `category`) |
-| Bullets | `bullet_rewrites[]` (`original_bullet`, `weakness_tags`, `improved_bullet`, `why_stronger`) |
-| Recruiter voice | `recruiter_observations[]` |
-| Skills in context | `contextual_missing_skills[]` (`skill_or_term`, `why_it_matters`, `where_in_job_posting`, `transferable_angle`, `how_to_surface`) |
-| Positioning | `positioning_recommendations[]`, `impact_metrics_gaps[]`, `resume_strengths[]` |
-| Legacy lists | `possible_rejection_factors`, `missing_skills`, … (optional string arrays) |
+| `OPENAI_API_KEY` | AI feedback and studio |
+| `JWT_SECRET_KEY` | Auth tokens (use a real secret in production) |
+| `CORS_ORIGINS` | Allowed frontend URLs |
 
-**History:** each POST creates a new row; the UI lists prior runs so you can compare edits over time.
-
-## Run the API
-
-**Docker (simplest):** from the repo root:
-
-```bash
-docker compose up --build
-```
-
-API on **http://127.0.0.1:3002** or **http://localhost:3002** (`GET /up` for health). Use `.env` only if you need to override Compose defaults.
-
-**Local (no Docker):** after `bundle install` and `bin/rails db:prepare`, start with an explicit port so it always matches the UI:
-
-```bash
-bin/rails server -b 0.0.0.0 -p 3002
-```
-
-**If the page won’t load:** open **`http://127.0.0.1:3002/up`** for the API, then **`http://localhost:5173`** for the UI (dev proxy). With Docker: `docker compose ps` and `docker compose logs web`.
-
-## Frontend
-
-```bash
-cd frontend && npm install && npm run dev
-```
-
-Dev server **`http://localhost:5173`** proxies **`/api`** → **`http://127.0.0.1:3002`**, so start Rails on **3002** first; you normally **do not** set `VITE_API_URL`. Optional: **`frontend/.env`** — see **`frontend/.env.example`** (`VITE_PROXY_TARGET` or `VITE_API_URL`).
-
-Production builds: set **`VITE_API_URL`** to your real API origin when you run **`npm run build`**.
-
-## Configuration
-
-| Concern | Notes |
-| --- | --- |
-| Database | `DATABASE_*` or `DATABASE_URL` — see `config/database.yml` |
-| Auth | `JWT_SECRET_KEY` (required in production) |
-| CORS | `CORS_ORIGINS` (comma-separated) |
-| AI feedback | `OPENAI_API_KEY` on the server only — without it, structured analysis still works; AI routes return 503 |
-| Embeddings | Optional: `pip install -r ml/python/requirements.txt`, `WHYNOT_PYTHON`, `WHYNOT_SENTENCE_TRANSFORMER_MODEL`; disable with `WHYNOT_DISABLE_SEMANTIC_EMBEDDINGS=1`. Default Compose image does not ship PyTorch — use host Python or a custom image for full semantic mode |
+See `.env.example` for more options.
 
 ## Tests
 
@@ -68,8 +118,21 @@ Production builds: set **`VITE_API_URL`** to your real API origin when you run *
 RAILS_ENV=test JWT_SECRET_KEY=test_jwt_secret bin/rails db:test:prepare test
 ```
 
-CI: Brakeman, RuboCop, and tests (`.github/workflows/ci.yml`).
+## Local API Without Docker
 
-## API (outline)
+```bash
+bundle install
+bin/rails db:prepare
+bin/rails server -b 0.0.0.0 -p 3002
+```
 
-Base path **`/api/v1`**: register/login, `me`, resumes (incl. PDF upload), job applications (structured `analysis_result`), nested **`ai_rejection_analyses`** (resume strategist runs). Errors return JSON `{ "errors": [{ "message": "..." }] }`.
+Run the frontend steps above. The dev server proxies `/api` to port 3002.
+
+## Future Improvements
+
+* Inline PDF editing
+* Multi-role resume tailoring
+* Saved recruiter feedback history
+* Personalized improvement tracking
+* AI-assisted resume section generation
+* Resume version comparison workflows

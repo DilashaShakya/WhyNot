@@ -20,27 +20,28 @@ module Api
       end
 
       def create
-        unless @job_application.analysis_result&.completed?
-          render json: {
-            errors: [
-              {
-                code: "precondition_failed",
-                message: "Complete structured matching first (refresh comparison if needed)."
-              }
-            ]
-          }, status: :unprocessable_entity
-          return
-        end
-
         if ENV["OPENAI_API_KEY"].blank?
           render json: {
             errors: [
               {
                 code: "service_unavailable",
-                message: "AI feedback is not configured—set OPENAI_API_KEY on the server."
+                message: "AI feedback requires OPENAI_API_KEY on the server."
               }
             ]
           }, status: :service_unavailable
+          return
+        end
+
+        resume = @job_application.resume
+        if resume.parsed_text.blank?
+          render json: {
+            errors: [
+              {
+                code: "precondition_failed",
+                message: "Upload and parse a resume PDF before generating AI feedback."
+              }
+            ]
+          }, status: :unprocessable_entity
           return
         end
 
@@ -50,17 +51,35 @@ module Api
           model_id: ENV.fetch("OPENAI_MODEL", "gpt-4o-mini")
         )
 
-        AiRejectionAnalysisJob.perform_later(record.id)
+        Ai::RejectionAnalysisRunner.call(record)
+        record.reload
+
+        if record.failed?
+          render json: {
+            errors: [
+              {
+                code: "ai_failed",
+                message: record.error_message.presence || "AI feedback could not be generated."
+              }
+            ],
+            ai_rejection_analysis: Api::V1::AiRejectionAnalysisSerializer.new(record).as_json
+          }, status: :unprocessable_entity
+          return
+        end
 
         render json: {
-          ai_rejection_analysis: Api::V1::AiRejectionAnalysisSerializer.new(record.reload).as_json
-        }, status: :accepted
+          ai_rejection_analysis: Api::V1::AiRejectionAnalysisSerializer.new(record).as_json
+        }, status: :ok
+      rescue ActiveRecord::RecordInvalid => e
+        render json: {
+          errors: [ { code: "validation_error", message: e.record.errors.full_messages.join(", ") } ]
+        }, status: :unprocessable_entity
       end
 
       private
 
       def set_job_application
-        @job_application = current_user.job_applications.includes(:analysis_result, :resume).find(params[:job_application_id])
+        @job_application = current_user.job_applications.includes(:resume).find(params[:job_application_id])
       end
 
       def set_ai_rejection_analysis

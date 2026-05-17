@@ -33,6 +33,7 @@ gem "rack-cors"
 # PDF text extraction for resume parsing (supports resume.file blob via Active Storage)
 gem "pdf-reader", "~> 2.15"
 
+
 group :development, :test do
   gem "dotenv-rails"
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

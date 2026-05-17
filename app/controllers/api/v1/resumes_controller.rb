@@ -36,6 +36,15 @@ module Api
       def destroy
         @resume.destroy!
         head :no_content
+      rescue ActiveRecord::DeleteRestrictionError
+        render json: {
+          errors: [
+            {
+              code: "has_dependents",
+              message: "This resume is linked to one or more job reviews. Delete those reviews first."
+            }
+          ]
+        }, status: :unprocessable_entity
       end
 
       private

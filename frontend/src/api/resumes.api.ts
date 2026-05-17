@@ -38,3 +38,7 @@ export async function createResume(
 
   return data.resume
 }
+
+export async function deleteResume(id: number): Promise<void> {
+  await api.delete(`/api/v1/resumes/${id}`)
+}

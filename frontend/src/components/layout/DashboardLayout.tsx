@@ -7,12 +7,13 @@ import { Sidebar } from '@/components/layout/Sidebar'
 export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const studioRoute = useMatch({ path: '/app/studio', end: true })
+  const wideDashboard = Boolean(studioRoute)
 
   return (
     <div
       className={cn(
         'flex h-[100dvh] overflow-hidden bg-[var(--color-surface)]',
-        studioRoute && 'bg-white dark:bg-neutral-950',
+        wideDashboard && 'bg-white dark:bg-neutral-950',
       )}
     >
       <Sidebar mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} />
@@ -22,10 +23,10 @@ export function DashboardLayout() {
         <main
           className={cn(
             'min-h-0 flex-1 overflow-y-auto px-4 py-8 md:px-10',
-            studioRoute && 'bg-white dark:bg-neutral-950',
+            wideDashboard && 'bg-white dark:bg-neutral-950',
           )}
         >
-          <div className={cn('mx-auto', studioRoute ? 'max-w-7xl' : 'max-w-4xl')}>
+          <div className={cn('mx-auto', wideDashboard ? 'max-w-7xl' : 'max-w-4xl')}>
             <Outlet />
           </div>
         </main>

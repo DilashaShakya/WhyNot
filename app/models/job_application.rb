@@ -20,7 +20,7 @@ class JobApplication < ApplicationRecord
   validates :company_name, length: { maximum: 255 }, allow_blank: true
   validate :resume_owned_by_user
 
-  # Cached sentence-transformer vector for job_description (same model as resumes; see Ml::SemanticResumeJobAnalysis).
+  # Optional JSON columns for legacy cached vectors (unused; lexicon-only matching now).
 
   private
 

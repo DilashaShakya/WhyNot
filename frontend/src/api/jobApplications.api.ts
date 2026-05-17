@@ -1,5 +1,5 @@
 import { api } from '@/api/client'
-import type { AnalysisResult, JobApplicationDetail, JobApplicationListItem } from '@/api/types'
+import type { JobApplicationDetail, JobApplicationListItem } from '@/api/types'
 
 export async function fetchJobApplications(): Promise<JobApplicationListItem[]> {
   const { data } = await api.get<{ job_applications: JobApplicationListItem[] }>('/api/v1/job_applications')
@@ -18,14 +18,14 @@ export type CreateJobApplicationPayload = {
   job_description: string
 }
 
+export type UpdateJobApplicationPayload = Partial<CreateJobApplicationPayload>
+
 export async function createJobApplication(payload: CreateJobApplicationPayload): Promise<JobApplicationDetail> {
   const { data } = await api.post<{ job_application: JobApplicationDetail }>('/api/v1/job_applications', {
     job_application: payload,
   })
   return data.job_application
 }
-
-export type UpdateJobApplicationPayload = CreateJobApplicationPayload
 
 export async function updateJobApplication(
   id: number,
@@ -37,9 +37,6 @@ export async function updateJobApplication(
   return data.job_application
 }
 
-export async function refreshJobAnalysis(jobApplicationId: number): Promise<AnalysisResult> {
-  const { data } = await api.post<{ analysis_result: AnalysisResult }>(
-    `/api/v1/job_applications/${jobApplicationId}/analysis_result`,
-  )
-  return data.analysis_result
+export async function deleteJobApplication(id: number): Promise<void> {
+  await api.delete(`/api/v1/job_applications/${id}`)
 }

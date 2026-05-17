@@ -1,5 +1,4 @@
 import type { AiRejectionAnalysisDetail, AiRejectionStructuredFeedback } from '@/api/aiRejection.api'
-import { ConfidenceMeter } from '@/components/ai/ConfidenceMeter'
 import { FeedbackDisclosure } from '@/components/ai/FeedbackDisclosure'
 import { ResumeStrategistPanel } from '@/components/ai/ResumeStrategistPanel'
 import { Card } from '@/components/ui/Card'
@@ -39,16 +38,13 @@ function BulletList({ items }: { items: string[] }) {
 
 function isStrategistFeedback(fb: AiRejectionStructuredFeedback) {
   return (
-    fb.prompt_schema_version === 'strategist_v1' ||
-    fb.prompt_schema_version === 'strategist_v2' ||
     (Array.isArray(fb.prioritized_improvements) && fb.prioritized_improvements.length > 0) ||
     (Array.isArray(fb.bullet_rewrites) && fb.bullet_rewrites.length > 0) ||
     (Array.isArray(fb.recruiter_observations) && fb.recruiter_observations.length > 0)
   )
 }
 
-function LegacyAiDetailCard({ detail, fb }: { detail: AiRejectionAnalysisDetail; fb: AiRejectionStructuredFeedback }) {
-  const conf = detail.confidence_by_section || {}
+function LegacyAiDetailCard({ fb }: { fb: AiRejectionStructuredFeedback }) {
   const summary = fb.executive_summary?.trim()
 
   return (
@@ -59,25 +55,6 @@ function LegacyAiDetailCard({ detail, fb }: { detail: AiRejectionAnalysisDetail;
           <p className="mt-2 text-sm leading-relaxed text-neutral-800 dark:text-neutral-100">{summary}</p>
         </Card>
       ) : null}
-
-      <Card className="p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">Overall confidence</p>
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              How well this narrative fits the supplied resume and posting (not a prediction of outcomes).
-            </p>
-          </div>
-          <div className="w-full max-w-xs sm:shrink-0">
-            <ConfidenceMeter label="Model confidence" value={detail.overall_confidence} />
-          </div>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {LEGACY_SECTION_DEFS.slice(0, 8).map(({ key, title }) => (
-            <ConfidenceMeter key={key} label={title} value={conf[key as string]} />
-          ))}
-        </div>
-      </Card>
 
       <Card className="overflow-hidden p-0">
         <div className="border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
@@ -132,13 +109,10 @@ export function AiRejectionDetailCard({ detail }: { detail: AiRejectionAnalysisD
 
   return (
     <div className="space-y-5">
-      {strategist ? <ResumeStrategistPanel detail={detail} fb={fb} /> : <LegacyAiDetailCard detail={detail} fb={fb} />}
+      {strategist ? <ResumeStrategistPanel fb={fb} /> : <LegacyAiDetailCard fb={fb} />}
 
       {detail.model_id ? (
-        <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
-          Model: {detail.model_id} · Prompt {detail.prompt_version}
-          {detail.openai_response_id ? ` · ${detail.openai_response_id}` : null}
-        </p>
+        <p className="text-[11px] text-neutral-400 dark:text-neutral-500">Model: {detail.model_id}</p>
       ) : null}
     </div>
   )

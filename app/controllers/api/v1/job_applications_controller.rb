@@ -6,7 +6,7 @@ module Api
       before_action :set_job_application, only: [ :show, :update, :destroy ]
 
       def index
-        applications = current_user.job_applications.includes(:analysis_result).order(updated_at: :desc)
+        applications = current_user.job_applications.order(updated_at: :desc)
         render json: {
           job_applications: applications.map { |ja| Api::V1::JobApplicationSerializer.new(ja, detail: false).as_json }
         }, status: :ok
@@ -21,20 +21,16 @@ module Api
       def create
         job_application = current_user.job_applications.build(job_application_params)
         job_application.save!
-        JobApplications::RunStructuredComparison.call(job_application)
-
         render json: {
-          job_application: Api::V1::JobApplicationSerializer.new(job_application.reload, detail: true).as_json
+          job_application: Api::V1::JobApplicationSerializer.new(job_application, detail: true).as_json
         }, status: :created
       end
 
       def update
         @job_application.assign_attributes(job_application_params)
         @job_application.save!
-        JobApplications::RunStructuredComparison.call(@job_application)
-
         render json: {
-          job_application: Api::V1::JobApplicationSerializer.new(@job_application.reload, detail: true).as_json
+          job_application: Api::V1::JobApplicationSerializer.new(@job_application, detail: true).as_json
         }, status: :ok
       end
 
@@ -46,7 +42,7 @@ module Api
       private
 
       def set_job_application
-        @job_application = current_user.job_applications.includes(:analysis_result).find(params[:id])
+        @job_application = current_user.job_applications.find(params[:id])
       end
 
       def job_application_params

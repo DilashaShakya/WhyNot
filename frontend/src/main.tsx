@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { configureApiAuth, configureUnauthorizedHandler } from '@/api/client'
+import { ConfirmDialog } from '@/components/feedback/ConfirmDialog'
 import { ToastViewport } from '@/components/feedback/ToastViewport'
 import { ThemeSync } from '@/components/system/ThemeSync'
 import { AppRoutes } from '@/routes/AppRoutes'
@@ -36,6 +37,7 @@ async function bootstrap(): Promise<void> {
         <ThemeSync />
         <AppRoutes />
         <ToastViewport />
+        <ConfirmDialog />
       </BrowserRouter>
     </StrictMode>,
   )

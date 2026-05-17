@@ -24,7 +24,6 @@ Rails.application.routes.draw do
         end
       end
       resources :job_applications do
-        resource :analysis_result, only: [ :show, :create ]
         resources :ai_rejection_analyses, only: [ :index, :show, :create ]
       end
     end
