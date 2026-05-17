@@ -75,9 +75,8 @@ The goal is not to exaggerate resumes, but to help users communicate their skill
 <img width="1873" height="977" alt="Screenshot 2026-05-17 012739" src="https://github.com/user-attachments/assets/4dad9b3a-5b87-40a1-a81f-6075158ca1de" />
 <img width="1878" height="978" alt="Screenshot 2026-05-17 012808" src="https://github.com/user-attachments/assets/e6846289-d5d4-4e3b-9a67-0db18fad2bc4" />
 <img width="1441" height="900" alt="Screenshot 2026-05-17 012746" src="https://github.com/user-attachments/assets/ae378577-d3a5-45e4-ac4f-7828d5b3a5a2" />
-<img width="392" height="179" alt="Screenshot 2026-05-17 025443" src="https://github.com/user-attachments/assets/32e22dc8-b5f7-4468-b05e-1e34b2fcb6b1" />
 <img width="1841" height="972" alt="Screenshot 2026-05-17 023826" src="https://github.com/user-attachments/assets/e66750a6-eed3-44f2-9a5a-ca67abd8067c" />
-<img width="684" height="870" alt="Screenshot 2026-05-17 022810" src="https://github.com/user-attachments/assets/5ee65994-522b-414d-ba2e-ae82c7e80898" />
+
 <img width="1515" height="942" alt="Screenshot 2026-05-17 012827" src="https://github.com/user-attachments/assets/fb57ba1a-2a36-42d9-8162-84c454f45e48" />
 
 
