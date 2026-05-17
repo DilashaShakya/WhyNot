@@ -5,6 +5,10 @@ updates:
   schedule:
     interval: daily
   open-pull-requests-limit: 10
+  ignore:
+    # Rails 8 needs a dedicated upgrade; avoid noisy failing PRs on 7.2.x.
+    - dependency-name: "rails"
+      update-types: ["version-update:semver-major"]
 - package-ecosystem: github-actions
   directory: "/"
   schedule:

@@ -1,0 +1,2 @@
+# Keep binstubs executable on Linux/macOS CI (Windows checkouts use 100644 otherwise).
+bin/* text eol=lf
