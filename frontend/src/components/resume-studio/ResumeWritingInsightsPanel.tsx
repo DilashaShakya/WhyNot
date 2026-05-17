@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -76,10 +76,6 @@ export function ResumeWritingInsightsPanel({
   const [sortMode, setSortMode] = useState<SortMode>('importance')
   const [openRank, setOpenRank] = useState<number | null>(null)
 
-  useEffect(() => {
-    setOpenRank(null)
-  }, [sortMode])
-
   const items = useMemo(() => {
     const raw = result?.match_items ?? []
     const copy = [...raw]
@@ -134,7 +130,10 @@ export function ResumeWritingInsightsPanel({
         <div className="flex shrink-0 gap-1 rounded-md border border-neutral-200 p-0.5 dark:border-neutral-700">
           <button
             type="button"
-            onClick={() => setSortMode('importance')}
+            onClick={() => {
+              setSortMode('importance')
+              setOpenRank(null)
+            }}
             className={cn(
               'rounded px-2.5 py-1 text-xs font-medium transition-colors',
               sortMode === 'importance'
@@ -146,7 +145,10 @@ export function ResumeWritingInsightsPanel({
           </button>
           <button
             type="button"
-            onClick={() => setSortMode('status')}
+            onClick={() => {
+              setSortMode('status')
+              setOpenRank(null)
+            }}
             className={cn(
               'rounded px-2.5 py-1 text-xs font-medium transition-colors',
               sortMode === 'status'

@@ -225,7 +225,7 @@ export function JobDescriptionPage() {
             No job reviews yet. Save your first posting above.
           </Card>
         ) : null}
-        <div className="grid gap-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {applications?.map((app) => (
             <motion.div
               key={app.id}

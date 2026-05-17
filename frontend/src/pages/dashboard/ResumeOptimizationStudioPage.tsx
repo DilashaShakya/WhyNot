@@ -11,7 +11,9 @@ import {
   studioBulletRewrite,
   studioImpactScan,
   studioTailoring,
+  findCachedWritingInsights,
   studioWritingInsights,
+  writingInsightsHasContent,
   type BulletRewriteResult,
   type ImpactScanResult,
   type ResumeStudioRewrite,
@@ -58,6 +60,7 @@ export function ResumeOptimizationStudioPage() {
 
   const [bulletResult, setBulletResult] = useState<BulletRewriteResult | null>(null)
   const [writingInsightsResult, setWritingInsightsResult] = useState<ResumeWritingInsightsResult | null>(null)
+  const [insightsFromCache, setInsightsFromCache] = useState(false)
   const [tailoringResult, setTailoringResult] = useState<TailoringResult | null>(null)
   const [impactResult, setImpactResult] = useState<ImpactScanResult | null>(null)
 
@@ -74,6 +77,7 @@ export function ResumeOptimizationStudioPage() {
 
   const jobOpt = jobId ?? undefined
 
+  const workingTextTrimLen = useMemo(() => workingText.trim().length, [workingText])
   const sections = useMemo(() => splitResumeIntoSections(workingText), [workingText])
   const activeSection = sections[sectionIdx]
   const bulletsInSection = useMemo(
@@ -146,6 +150,8 @@ export function ResumeOptimizationStudioPage() {
 
   useEffect(() => {
     insightsLoadedKeyRef.current = null
+    setWritingInsightsResult(null)
+    setInsightsFromCache(false)
   }, [resumeId, jobId])
 
   useEffect(() => {
@@ -154,41 +160,76 @@ export function ResumeOptimizationStudioPage() {
     }
   }, [sections.length, sectionIdx])
 
-  const runWritingInsights = useCallback(async () => {
-    if (!resumeId) {
-      setError('Choose a resume first.')
-      return
-    }
-    const body = workingText.trim()
-    if (!body) {
-      setError('Add resume text to the working copy first.')
-      return
-    }
-    setBusy('writing')
-    setError(null)
-    setWritingInsightsResult(null)
-    try {
-      const r = await studioWritingInsights(resumeId, {
-        resume_body: workingText,
-        job_application_id: jobOpt,
-      })
-      setWritingInsightsResult(r)
-      const rw = await fetchResumeStudioRewrites(resumeId)
-      setRewrites(rw)
-      insightsLoadedKeyRef.current = `${resumeId}:${jobOpt ?? ''}`
-    } catch (e) {
-      setError(getApiErrors(e)[0] ?? 'Writing insights failed.')
-    } finally {
-      setBusy(null)
-    }
-  }, [resumeId, workingText, jobOpt])
+  const insightsCacheKey = useCallback(
+    () => (resumeId ? `${resumeId}:${jobOpt ?? ''}:${workingText.length}` : null),
+    [resumeId, jobOpt, workingText.length],
+  )
+
+  const loadWritingInsights = useCallback(
+    async (forceRefresh = false) => {
+      if (!resumeId) {
+        setError('Choose a resume first.')
+        return
+      }
+      const body = workingText.trim()
+      if (!body) {
+        setError('Add resume text to the working copy first.')
+        return
+      }
+      const key = insightsCacheKey()
+      if (!key) return
+
+      if (!forceRefresh) {
+        const cached = findCachedWritingInsights(rewrites, {
+          jobApplicationId: jobOpt,
+          resumeBodyLength: workingText.length,
+        })
+        if (cached) {
+          setWritingInsightsResult(cached)
+          setInsightsFromCache(true)
+          insightsLoadedKeyRef.current = key
+          return
+        }
+      }
+
+      setBusy('writing')
+      setError(null)
+      setInsightsFromCache(false)
+      if (forceRefresh) setWritingInsightsResult(null)
+      try {
+        const r = await studioWritingInsights(resumeId, {
+          resume_body: workingText,
+          job_application_id: jobOpt,
+        })
+        setWritingInsightsResult(r)
+        const rw = await fetchResumeStudioRewrites(resumeId)
+        setRewrites(rw)
+        insightsLoadedKeyRef.current = key
+      } catch (e) {
+        setError(getApiErrors(e)[0] ?? 'Writing insights failed.')
+      } finally {
+        setBusy(null)
+      }
+    },
+    [resumeId, workingText, jobOpt, rewrites, insightsCacheKey],
+  )
 
   useEffect(() => {
-    if (workspaceTab !== 'insights' || loadingBoot || !resumeId || !workingText.trim()) return
-    const key = `${resumeId}:${jobId ?? ''}`
-    if (insightsLoadedKeyRef.current === key) return
-    void runWritingInsights()
-  }, [workspaceTab, loadingBoot, resumeId, jobId, runWritingInsights])
+    if (workspaceTab !== 'insights' || loadingBoot || !resumeId || workingTextTrimLen === 0) return
+    const key = insightsCacheKey()
+    if (!key) return
+    if (insightsLoadedKeyRef.current === key && writingInsightsHasContent(writingInsightsResult)) return
+    void loadWritingInsights(false)
+  }, [
+    workspaceTab,
+    loadingBoot,
+    resumeId,
+    jobId,
+    workingTextTrimLen,
+    loadWritingInsights,
+    writingInsightsResult,
+    insightsCacheKey,
+  ])
 
   const runBulletRewrite = async () => {
     if (!resumeId || !selectedBullet?.trim()) {
@@ -314,7 +355,7 @@ export function ResumeOptimizationStudioPage() {
 
   const refreshInsights = () => {
     insightsLoadedKeyRef.current = null
-    void runWritingInsights()
+    void loadWritingInsights(true)
   }
 
   if (!loadingBoot && resumes.length === 0) {
@@ -496,9 +537,12 @@ export function ResumeOptimizationStudioPage() {
                 {!jobId ? (
                   <span className="text-xs text-neutral-500">Tip: pick a target job for more specific insights.</span>
                 ) : null}
+                {insightsFromCache && busy !== 'writing' ? (
+                  <span className="text-xs text-neutral-500">Showing saved insights — refresh to re-run AI.</span>
+                ) : null}
               </div>
               <ResumeWritingInsightsPanel
-                loading={busy === 'writing'}
+                loading={busy === 'writing' && !writingInsightsHasContent(writingInsightsResult)}
                 result={writingInsightsResult}
                 hasTargetJob={!!jobId}
                 onDismiss={() => setWritingInsightsResult(null)}

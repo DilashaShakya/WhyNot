@@ -66,7 +66,7 @@ export function ResumeReviewPage() {
           </Link>
         </Card>
       ) : (
-        <div className="grid gap-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {applications.map((app) => (
             <Link key={app.id} to={`/app/job/${app.id}`}>
               <Card className="p-4 transition-colors hover:border-neutral-300 dark:hover:border-neutral-600">

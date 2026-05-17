@@ -94,90 +94,94 @@ export function AiRejectionDashboard({ jobApplicationId }: { jobApplicationId: n
       transition={{ duration: 0.35 }}
       className="space-y-5"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-xl space-y-1">
-          <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-            AI recruiter feedback
-          </h2>
-          <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-            Honest recruiter-style feedback: strengths, rejection risks, missing keywords, bullet rewrites, and a
-            prioritized action checklist. Each run is saved so you can compare iterations.
-          </p>
+      <motion.div className="relative overflow-hidden rounded-xl border border-violet-100/80 bg-gradient-to-br from-violet-50/70 via-white to-sky-50/50 p-5 dark:border-violet-900/35 dark:from-violet-950/30 dark:via-neutral-950 dark:to-sky-950/20">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-violet-300/25 blur-2xl dark:bg-violet-600/10"
+        />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-1">
+            <h2 className="text-lg font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+              AI recruiter feedback
+            </h2>
+            <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+              Honest recruiter-style feedback: strengths, rejection risks, missing keywords, bullet rewrites, and a
+              prioritized action checklist. Each run is saved so you can compare iterations.
+            </p>
+          </div>
+          <Button type="button" onClick={() => void onGenerate()} disabled={generating} className="shrink-0">
+            {generating ? (
+              <>
+                <Spinner className="h-4 w-4" />
+                Generating…
+              </>
+            ) : (
+              'Generate feedback'
+            )}
+          </Button>
         </div>
-        <Button type="button" onClick={() => void onGenerate()} disabled={generating}>
-          {generating ? (
-            <>
-              <Spinner className="h-4 w-4" />
-              Generating…
-            </>
-          ) : (
-            'Generate feedback'
-          )}
-        </Button>
-      </div>
+      </motion.div>
 
       {listError ? <p className="text-sm text-red-600 dark:text-red-400">{listError}</p> : null}
 
-      <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <Card className="h-fit p-3">
-          <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
-            History
-          </p>
-          <div className="mt-1 flex flex-col gap-1">
-            {list === null ? (
-              <div className="flex items-center gap-2 px-2 py-3 text-sm text-neutral-500">
-                <Spinner className="h-4 w-4" />
-                Loading…
-              </div>
-            ) : list.length === 0 ? (
-              <p className="px-2 py-3 text-sm text-neutral-500 dark:text-neutral-400">No AI runs yet.</p>
-            ) : (
-              list.map((row) => {
-                const active = row.id === selectedId
-                const label = new Date(row.created_at).toLocaleString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-                return (
-                  <button
-                    key={row.id}
-                    type="button"
-                    onClick={() => setSelectedId(row.id)}
-                    className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                      active
-                        ? 'bg-neutral-100 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-50'
-                        : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-900'
-                    }`}
-                  >
-                    <span className="block">{label}</span>
-                    <span className="mt-0.5 block text-[11px] capitalize text-neutral-400 dark:text-neutral-500">
-                      {row.status.replaceAll('_', ' ')}
-                    </span>
-                  </button>
-                )
-              })
-            )}
-          </div>
-        </Card>
-
-        <div>
-          {detailLoading && !detail ? (
-            <Card className="p-6">
-              <div className="flex items-center gap-2 text-sm text-neutral-500">
-                <Spinner className="h-4 w-4" />
-                Loading analysis…
-              </div>
-            </Card>
-          ) : !detail ? (
-            <Card className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              Select a history entry or generate a new AI analysis.
-            </Card>
+      <Card className="border-slate-100 bg-slate-50/40 p-3 dark:border-slate-800/60 dark:bg-slate-950/20">
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          History
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {list === null ? (
+            <div className="flex items-center gap-2 px-2 py-2 text-sm text-neutral-500">
+              <Spinner className="h-4 w-4" />
+              Loading…
+            </div>
+          ) : list.length === 0 ? (
+            <p className="px-2 py-2 text-sm text-neutral-500 dark:text-neutral-400">No AI runs yet.</p>
           ) : (
-            <AiRejectionDetailCard detail={detail} />
+            list.map((row) => {
+              const active = row.id === selectedId
+              const label = new Date(row.created_at).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+              return (
+                <button
+                  key={row.id}
+                  type="button"
+                  onClick={() => setSelectedId(row.id)}
+                  className={`rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+                    active
+                      ? 'border-violet-200 bg-violet-50 font-medium text-violet-950 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-100'
+                      : 'border-transparent text-neutral-600 hover:bg-violet-50/50 dark:text-neutral-400 dark:hover:bg-violet-950/25'
+                  }`}
+                >
+                  <span className="block whitespace-nowrap">{label}</span>
+                  <span className="mt-0.5 block text-[11px] capitalize text-neutral-400 dark:text-neutral-500">
+                    {row.status.replaceAll('_', ' ')}
+                  </span>
+                </button>
+              )
+            })
           )}
         </div>
+      </Card>
+
+      <div className="min-w-0 w-full">
+        {detailLoading && !detail ? (
+          <Card className="p-6">
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
+              <Spinner className="h-4 w-4" />
+              Loading analysis…
+            </div>
+          </Card>
+        ) : !detail ? (
+          <Card className="p-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            Select a history entry or generate a new AI analysis.
+          </Card>
+        ) : (
+          <AiRejectionDetailCard detail={detail} />
+        )}
       </div>
     </motion.section>
   )

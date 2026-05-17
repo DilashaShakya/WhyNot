@@ -11,6 +11,62 @@ import { Spinner } from '@/components/ui/Spinner'
 import { useToast } from '@/hooks/useToast'
 import { confirmDelete } from '@/stores/confirmStore'
 
+function JobDescriptionBody({
+  detail,
+  editingJd,
+  jdDraft,
+  savingJd,
+  onJdChange,
+  onEdit,
+  onSave,
+  onCancel,
+}: {
+  detail: JobApplicationDetail
+  editingJd: boolean
+  jdDraft: string
+  savingJd: boolean
+  onJdChange: (value: string) => void
+  onEdit: () => void
+  onSave: () => void
+  onCancel: () => void
+}) {
+  if (editingJd) {
+    return (
+      <div className="space-y-3">
+        <textarea
+          value={jdDraft}
+          onChange={(e) => onJdChange(e.target.value)}
+          rows={14}
+          className="max-h-[min(70vh,520px)] w-full resize-y rounded-md border border-neutral-200 bg-neutral-50/50 px-3 py-2 font-mono text-xs leading-relaxed focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-100"
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={onSave} disabled={savingJd}>
+            {savingJd ? 'Saving…' : 'Save'}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="max-h-[min(70vh,520px)] overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
+        {detail.job_description}
+      </p>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-xs font-medium text-neutral-500 underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100"
+      >
+        Edit description
+      </button>
+    </div>
+  )
+}
+
 export function JobComparisonPage() {
   const { jobApplicationId } = useParams<{ jobApplicationId: string }>()
   const id = Number(jobApplicationId)
@@ -151,54 +207,59 @@ export function JobComparisonPage() {
         </Card>
       ) : null}
 
-      {/* Job description (collapsible) */}
       {detail && !loading ? (
-        <details className="rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
-          <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-neutral-900 marker:content-none dark:text-neutral-50 [&::-webkit-details-marker]:hidden">
-            Job description
-            <span className="ml-2 text-xs font-normal text-neutral-400 dark:text-neutral-500">
-              (click to expand)
-            </span>
-          </summary>
-          <div className="border-t border-neutral-100 p-5 dark:border-neutral-800">
-            {editingJd ? (
-              <div className="space-y-3">
-                <textarea
-                  value={jdDraft}
-                  onChange={(e) => setJdDraft(e.target.value)}
-                  rows={12}
-                  className="w-full resize-y rounded-md border border-neutral-200 bg-neutral-50/50 px-3 py-2 font-mono text-xs leading-relaxed focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-100"
-                />
-                <div className="flex gap-2">
-                  <Button type="button" onClick={() => void onSaveJd()} disabled={savingJd}>
-                    {savingJd ? 'Saving…' : 'Save'}
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => { setEditingJd(false); setJdDraft(detail.job_description) }}>
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-700 dark:text-neutral-300">
-                  {detail.job_description}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setEditingJd(true)}
-                  className="text-xs font-medium text-neutral-500 underline underline-offset-2 hover:text-neutral-900 dark:hover:text-neutral-100"
-                >
-                  Edit description
-                </button>
-              </div>
-            )}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,300px)] lg:items-start">
+          {/* AI feedback — main column (left) */}
+          <div className="min-w-0 w-full">
+            <AiRejectionDashboard jobApplicationId={id} />
           </div>
-        </details>
-      ) : null}
 
-      {/* AI feedback — primary content */}
-      {!loading && detail ? (
-        <AiRejectionDashboard jobApplicationId={id} />
+          {/* Job posting — right sidebar */}
+          <aside className="min-w-0">
+            <details className="rounded-lg border border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/40 lg:hidden">
+              <summary className="cursor-pointer list-none px-5 py-4 text-sm font-medium text-neutral-900 marker:content-none dark:text-neutral-50 [&::-webkit-details-marker]:hidden">
+                Job description
+                <span className="ml-2 text-xs font-normal text-neutral-400 dark:text-neutral-500">
+                  (tap to expand)
+                </span>
+              </summary>
+              <div className="border-t border-neutral-100 p-5 dark:border-neutral-800">
+                <JobDescriptionBody
+                  detail={detail}
+                  editingJd={editingJd}
+                  jdDraft={jdDraft}
+                  savingJd={savingJd}
+                  onJdChange={setJdDraft}
+                  onEdit={() => setEditingJd(true)}
+                  onSave={() => void onSaveJd()}
+                  onCancel={() => {
+                    setEditingJd(false)
+                    setJdDraft(detail.job_description)
+                  }}
+                />
+              </div>
+            </details>
+
+            <Card className="sticky top-6 hidden border-slate-200/80 bg-slate-50/30 p-5 dark:border-slate-800/60 dark:bg-slate-950/25 lg:block">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Job posting</p>
+              <div className="mt-4">
+                <JobDescriptionBody
+                  detail={detail}
+                  editingJd={editingJd}
+                  jdDraft={jdDraft}
+                  savingJd={savingJd}
+                  onJdChange={setJdDraft}
+                  onEdit={() => setEditingJd(true)}
+                  onSave={() => void onSaveJd()}
+                  onCancel={() => {
+                    setEditingJd(false)
+                    setJdDraft(detail.job_description)
+                  }}
+                />
+              </div>
+            </Card>
+          </aside>
+        </div>
       ) : null}
     </motion.div>
   )

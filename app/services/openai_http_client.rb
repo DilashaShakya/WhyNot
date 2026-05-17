@@ -95,7 +95,7 @@ class OpenaiHttpClient
   private_class_method :handle_response!
 
   def self.retryable?(code)
-    [429, 500, 502, 503, 504].include?(code)
+    [ 429, 500, 502, 503, 504 ].include?(code)
   end
   private_class_method :retryable?
 end

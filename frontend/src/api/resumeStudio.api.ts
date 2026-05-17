@@ -340,6 +340,36 @@ function coerceWritingInsightsRaw(raw: unknown): ResumeWritingInsightsResult {
   }
 }
 
+export function writingInsightsHasContent(result: ResumeWritingInsightsResult | null): boolean {
+  if (!result) return false
+  return Boolean(
+    result.overview?.trim() ||
+    (result.match_items?.length ?? 0) > 0 ||
+    (result.writing_insights?.length ?? 0) > 0 ||
+    (result.section_notes?.length ?? 0) > 0 ||
+    (result.cross_cutting?.length ?? 0) > 0 ||
+    (result.ats_readability_notes?.length ?? 0) > 0 ||
+    result.summary,
+  )
+}
+
+/** Latest saved studio run for the same resume body length and job (rewrites are newest-first). */
+export function findCachedWritingInsights(
+  rewrites: ResumeStudioRewrite[],
+  opts: { jobApplicationId?: number; resumeBodyLength: number },
+): ResumeWritingInsightsResult | null {
+  const wantJob = opts.jobApplicationId ?? null
+  for (const row of rewrites) {
+    if (row.prompt_kind !== 'writing_insights') continue
+    if ((row.job_application_id ?? null) !== wantJob) continue
+    const stored = row.input?.resume_body_char_count
+    if (typeof stored !== 'number' || stored !== opts.resumeBodyLength) continue
+    const parsed = coerceWritingInsightsRaw(row.output)
+    if (writingInsightsHasContent(parsed)) return parsed
+  }
+  return null
+}
+
 export async function studioWritingInsights(
   resumeId: number,
   payload: { resume_body: string; job_application_id?: number },

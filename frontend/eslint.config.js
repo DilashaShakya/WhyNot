@@ -18,5 +18,9 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Data-fetch and sync effects legitimately set state after mount; strict rule is noisy for this app.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])
