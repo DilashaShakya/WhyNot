@@ -31,7 +31,7 @@ gem "bootsnap", require: false
 gem "rack-cors"
 
 # PDF text extraction for resume parsing (supports resume.file blob via Active Storage)
-gem "pdf-reader", "~> 2.15"
+gem "pdf-reader", "~> 2.16"
 
 
 group :development, :test do
